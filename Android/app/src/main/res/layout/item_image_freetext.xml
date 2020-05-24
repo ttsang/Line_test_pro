@@ -2,14 +2,14 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="120dp"
     android:layout_height="wrap_content"
-    android:layout_marginEnd="5dp"
-    android:layout_marginStart="5dp"
     android:orientation="vertical">
 
+    <!-- I hard code for width and height-->
     <ImageView
         android:id="@+id/imgFreeText"
         android:layout_width="100dp"
         android:layout_height="130dp"
+        android:layout_gravity="center_horizontal"
         android:adjustViewBounds="true"
         android:background="@mipmap/ic_launcher"
         android:cropToPadding="true"
@@ -22,5 +22,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:max="100"
-        android:progress="45" />
+        android:progress="5" />
+
+    <TextView
+        android:id="@+id/tv_downloaded"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:textColor="@color/colorPrimaryDark" />
 </LinearLayout>

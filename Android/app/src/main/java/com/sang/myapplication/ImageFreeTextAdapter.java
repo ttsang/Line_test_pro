@@ -5,30 +5,33 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import static com.sang.myapplication.AppUtil.checkifImageExists;
+import static com.sang.myapplication.AppUtil.storagePath;
+
 public class ImageFreeTextAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    private List<String> imgPath;
+    private List<ImageModel> imageModels;
     private List<String> imgServerPath = new ArrayList<>();
 
-    public ImageFreeTextAdapter(Context mContext, List<String> imgPath) {
-        this.imgPath = imgPath;
+
+    public ImageFreeTextAdapter(List<ImageModel> movies) {
+        this.imageModels = movies;
     }
 
 
@@ -41,45 +44,67 @@ public class ImageFreeTextAdapter extends RecyclerView.Adapter<RecyclerView.View
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, @SuppressLint("RecyclerView") final int position) {
         final MyViewHolder myViewHolder = (MyViewHolder) holder;
-        if (imgServerPath.size() > 0 && position < imgServerPath.size()) {
-            Bitmap bitmap = getProfileImg(imgServerPath.get(position));
-            myViewHolder.avatar.setImageBitmap(bitmap);
+        final ImageModel imageModel = getItem(position);
+        if (imageModel != null) {
+            if (TextUtils.isEmpty(imageModel.localPath)) {
+                DownloadImage downloadImage = new DownloadImage(myViewHolder.avatar,
+                        myViewHolder.pb_loading,
+                        myViewHolder.tv_downloaded,
+                        myViewHolder.avatar.getContext(), imageModel.serverPath, imageModel.id);
+                downloadImage.execute();
+            } else {
+                Bitmap bitmap = getProfileImg(storagePath + "/" + imageModel.id + ".jpg");
+                if (bitmap != null) {
+                    myViewHolder.avatar.setImageBitmap(bitmap);
+                    myViewHolder.pb_loading.setVisibility(View.GONE);
+                    myViewHolder.tv_downloaded.setVisibility(View.VISIBLE);
+                    myViewHolder.tv_downloaded.setText("Local file");
+                } else {
+                    DownloadImage downloadImage = new DownloadImage(myViewHolder.avatar,
+                            myViewHolder.pb_loading,
+                            myViewHolder.tv_downloaded,
+                            myViewHolder.avatar.getContext(), imageModel.serverPath, imageModel.id);
+                    downloadImage.execute();
+                }
+            }
+
+            //  For test click download
+            myViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    DownloadImage downloadImage = new DownloadImage(myViewHolder.avatar,
+                            myViewHolder.pb_loading,
+                            myViewHolder.tv_downloaded,
+                            myViewHolder.avatar.getContext(), imageModel.serverPath, imageModel.id);
+                    downloadImage.execute();
+                }
+            });
         }
     }
 
-    public void setServerPaths(String url) {
-        if (imgServerPath.size() < imgPath.size()) {
-            imgServerPath.add(url);
-        }
-        notifyDataSetChanged();
+
+    private ImageModel getItem(int pos) {
+        if (pos > -1 && pos < imageModels.size())
+            return imageModels.get(pos);
+        return null;
     }
 
     @Override
     public int getItemCount() {
-        return imgPath.size();
-    }
-
-    public void addPathImage(String path) {
-        imgPath.add(path);
-        notifyItemInserted(imgPath.size());
-    }
-
-    public void addMultiPathImage(List<String> paths) {
-        int index = imgPath.isEmpty() ? 0 : imgPath.size();
-        imgPath.addAll(index, paths);
-        notifyItemRangeInserted(index, paths.size());
+        return imageModels.size();
     }
 
     class MyViewHolder extends RecyclerView.ViewHolder {
 
-        public ImageView avatar;
-
+        ImageView avatar;
+        TextView tv_downloaded;
         ProgressBar pb_loading;
 
         MyViewHolder(View view) {
             super(view);
             avatar = view.findViewById(R.id.imgFreeText);
             pb_loading = view.findViewById(R.id.progress);
+            tv_downloaded = view.findViewById(R.id.tv_downloaded);
         }
 
     }
@@ -87,16 +112,17 @@ public class ImageFreeTextAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     private Bitmap getProfileImg(String url) {
 //        Bitmap bitmap = cache.get(url);
+        Log.e("Sang", "url:" + url);
         Bitmap bitmap = null;
-        if (bitmap != null) return bitmap;
+//        if (bitmap != null) return bitmap;
 
 //        File file = ThumbDAO.downloadProfileImg(getContext(), url);
         File file = new File(url);
-        if (file == null) return null;
-        FileInputStream inputStream = null;
+        if (!file.exists())
+            return null;
         //            inputStream = new FileInputStream(file);
         bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
-
+        Log.e("Sang", "bitmap:" + bitmap);
         return bitmap;
     }
 
